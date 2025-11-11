@@ -67,3 +67,18 @@ Thanks to all those unknown developers who shared their sed and awk scripts and 
 
 - Describe changes since the commit that appears in the build description. As noted above, I think this information is not contained in the .frm file, so it cannot be added.
 
+- In ORI builds, an extract of the git log for the build is placed (by a command in the Makefile) in `root/fwhistory.txt`. This could be extracted the same way as `opt/VERSIONS`, by just changing the string in this script. However, this history information is better extracted from the repo online, starting from the commit revealed by device-fw line in VERSIONS.
+
+## Other Places to Find Information
+
+If you have the Pluto up and running, it has a web server. If you look at [index.html](http://pluto.local/index.html) (on the Pluto) with a web browser (on a connected computer), you'll see all kinds of build information, much more than is returned by this script.
+
+But if you look in the ramdisk image in the pluto.frm file, you'll find the HTML file in /www/index.html contains only placeholders for all of this information. It turns out that these placeholders are replaced with the actual information by a script that runs when the Pluto boots up. That script is located at /etc/init.d/S45msd (or in the Analog Devices repo at [buildroot/board/pluto/S45msd](https://github.com/analogdevicesinc/buildroot/blob/f70f4aff40bcc16e3d9a920984d034ad108f4993/board/pluto/S45msd)). This script has a function `patch_html_page()` that obtains most of its information from resources that are only available at runtime, such as `/sys`, or by running programs like `uname`. Some of the info comes from /opt/VERSIONS, which is where this script looks. Some of that runtime information actually comes out of the hardware, like the serial number, or non-volatile storage on the hardware, like the USB Ethernet mode. The rest, including more build information, must be in the pluto.frm file somewhere, possibly scattered around in multiple places.
+
+The name of the computer the firmware was compiled and the username of the user who compiled it, and more, are buried in the kernel image, and are made accessible at runtime via
+```
+[pluto3:~]# cat /proc/version
+Linux version 5.15.0-20952-ge14e351533f9 (abraxas3d@mymelody) (arm-none-linux-gnueabihf-gcc (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 10.3.1 20210621, GNU ld (GNU Toolchain for the A-profile Architecture 10.3-2021.07 (arm-10.29)) 2.36.1.20210621) #2 SMP PREEMPT Fri Nov 7 23:04:52 PST 2025
+[pluto3:~]# 
+```
+The first part of this output is stored in the kernel in a string named `linux_proc_banner` in `init/version.c`. If I knew how to decompress the Linux zImage, I could probably extract this information.
